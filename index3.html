@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LPR System Dashboard</title>
+    <link rel="stylesheet" href="styles3.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div class="dashboard">
+        <header class="header">
+            <div class="logo">
+                <i class="fas fa-car-alt"></i>
+                <h1>License Plate Recognition System</h1>
+            </div>
+            <div class="status-indicators">
+                <div class="status-item database">
+                    <i class="fas fa-database"></i>
+                    <span>Airtable: <span class="status-value active">Synced</span></span>
+                </div>
+            </div>
+        </header>
+
+        <div class="main-content">
+            <div class="data-section">
+                <div class="stats-cards">
+                    <div class="card">
+                        <div class="card-icon blue">
+                            <i class="fas fa-car"></i>
+                        </div> 
+                        <div class="card-info">
+                            <h3>Today's Detections</h3>
+                            <p class="card-value">24</p>
+                        </div>
+                    </div>
+                    <div class="card">
+                        <div class="card-icon green">
+                            <i class="fas fa-check-circle"></i>
+                        </div>
+                        <div class="card-info">
+                            <h3>Registered</h3>
+                            <p class="card-value">18</p>
+                        </div>
+                    </div>
+                    <div class="card">
+                        <div class="card-icon red">
+                            <i class="fas fa-times-circle"></i>
+                        </div>
+                        <div class="card-info">
+                            <h3>Unregistered</h3>
+                            <p class="card-value">6</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="recent-activity">
+                    <h2><i class="fas fa-history"></i> Recent Activity</h2>
+                    <div class="activity-table-container">
+                        <table class="activity-table">
+                            <thead>
+                                <tr>
+                                    <th>Time</th>
+                                    <th>Plate Number</th>
+                                    <th>State</th>
+                                    <th>User</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>10:18:32 AM</td>
+                                    <td>DL04CD5678</td>
+                                    <td>DL</td>
+                                    <td>Not Registered</td>
+                                    <td><span class="badge unregistered">Unregistered</span></td>
+                                </tr>
+                                <tr>
+                                    <td>10:15:07 AM</td>
+                                    <td>KA03EF9012</td>
+                                    <td>KA</td>
+                                    <td>Jane Smith</td>
+                                    <td><span class="badge registered">Registered</span></td>
+                                </tr>
+                                <tr>
+                                    <td>10:09:56 AM</td>
+                                    <td>TN05GH3456</td>
+                                    <td>TN</td>
+                                    <td>Not Registered</td>
+                                    <td><span class="badge unregistered">Unregistered</span></td>
+                                </tr>
+                                <tr>
+                                    <td>10:02:11 AM</td>
+                                    <td>AP06IJ7890</td>
+                                    <td>AP</td>
+                                    <td>Robert Johnson</td>
+                                    <td><span class="badge registered">Registered</span></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="table-footer">
+                        <div class="pagination">
+                            <button class="btn btn-sm"><i class="fas fa-chevron-left"></i></button>
+                            <span>Page 1 of 3</span>
+                            <button class="btn btn-sm"><i class="fas fa-chevron-right"></i></button>
+                        </div>
+                        <button class="btn btn-primary"><i class="fas fa-download"></i> Export Data</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const airtableToken = 'patg7F8lFnuPttReN.e3fb427584055449046743906b0c2cfa2d44d883e9fb2a875844afbe17313bad'; // use environment vars in production
+        const baseId = 'app6boscwGUbTlwTn';
+        const tableName = 'Vehicles';
+        const apiUrl = `https://api.airtable.com/v0/${baseId}/${tableName}`;
+
+        async function fetchAirtableData() {
+            const response = await fetch(apiUrl, {
+                headers: {
+                    Authorization: `Bearer ${airtableToken}`
+                }
+            });
+            const data = await response.json();
+            return data.records;
+        }
+
+        function updateDashboard(records) {
+            let registeredCount = 0;
+            let unregisteredCount = 0;
+            let tableHTML = '';
+
+            records.forEach(record => {
+                const plate = record.fields['Number Plate'] || 'Unknown';
+                const user = record.fields['User'] || 'Not Registered';
+                const time = new Date(record.fields['Time']).toLocaleTimeString();
+                const status = user === 'Not Registered' ? 'unregistered' : 'registered';
+
+                if (status === 'registered') registeredCount++;
+                else unregisteredCount++;
+
+                tableHTML += `
+                    <tr>
+                        <td>${time}</td>
+                        <td>${plate}</td>
+                        <td>${plate.substring(0, 2)}</td>
+                        <td>${user}</td>
+                        <td><span class="badge ${status}">${status.charAt(0).toUpperCase() + status.slice(1)}</span></td>
+                    </tr>
+                `;
+            });
+
+            document.querySelectorAll('.card-value')[0].textContent = records.length;
+            document.querySelectorAll('.card-value')[1].textContent = registeredCount;
+            document.querySelectorAll('.card-value')[2].textContent = unregisteredCount;
+            document.querySelector('.activity-table tbody').innerHTML = tableHTML;
+        }
+
+        fetchAirtableData().then(updateDashboard);
+    </script>
+</body>
+</html>
